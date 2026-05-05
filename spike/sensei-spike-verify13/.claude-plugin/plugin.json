@@ -1,0 +1,9 @@
+{
+  "name": "sensei-spike-verify13-plugin",
+  "description": "Sensei spike verify13 — mid-conversation skill loading test.",
+  "version": "0.0.1",
+  "author": { "name": "sensei-hack", "url": "https://github.com/elastic" },
+  "homepage": "https://github.com/elastic",
+  "repository": "https://github.com/elastic",
+  "license": "MIT"
+}
