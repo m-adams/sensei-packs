@@ -4,7 +4,7 @@
   "configuration": {
     "workflow_id": "eep-grade-search-query"
   },
-  "description": "Grade Searching Data exercises: runs a reference Query DSL search against the lab index and returns pass/fail with hit count, sort verification, and targeted hints.",
+  "description": "Grade Searching Data exercises: executes the learner's stored search template against the lab index and returns pass/fail with hit count, sort verification, and targeted hints.",
   "tags": [
     "elastic-engineer-prep"
   ]

@@ -18,10 +18,13 @@ Exam objectives this skill covers:
 
 ## Beat 1 — Explain
 
-Give a 2-sentence summary of each cluster, then ask if they want to set up a lab:
+Give a 2-sentence summary of each topic, then ask if they want to set up a lab:
 
 **Query DSL and bool logic**
 > All searches are JSON sent to `_search`. The `bool` query composes four clauses: `must` (scored full-text), `filter` (exact, cached, no scoring), `should` (boost), `must_not` (exclude). Prefer `filter` over `must` for exact values — it's faster and uses the bitset cache.
+
+**Search templates**
+> Store parameterized queries with `PUT _scripts/<template-id>` using Mustache syntax. Execute with `POST <index>/_search/template { "id": "<template-id>", "params": {...} }`. Templates decouple query logic from application code — change the template without redeploying.
 
 **Aggregations**
 > Aggs run in parallel with the query on the same shard data. `terms` buckets by value, `date_histogram` buckets by time, `avg`/`sum`/`max` are metrics. Nest a metric agg inside a bucket agg to get "average score per category".
@@ -35,11 +38,11 @@ Give a 2-sentence summary of each cluster, then ask if they want to set up a lab
 **Cross-cluster search**
 > Prefix the index with `cluster_alias:` — e.g., `GET cluster_two:logs-*,local-logs-*/_search`. The remote cluster must be registered in `cluster.remote` settings first.
 
-Close with: _"Want me to set up a search lab index so you can practice these in Dev Tools Console?"_
+Close with: _"Want me to set up a search lab so you can practice building queries and search templates in Dev Tools?"_
 
 ---
 
-## Beat 2 — Setup and canonical exercise
+## Beat 2 — Setup and canonical template exercise
 
 Call **`eep-setup-search-lab-tool`** with no parameters.
 
@@ -50,65 +53,101 @@ It creates `eep-search-lab-demo` with:
 
 After the tool returns, tell the learner:
 
-> Lab is ready. Open **Dev Tools Console** and run the canonical query:
+> Lab is ready. Your first exercise: create a **search template** that finds published docs in a given category matching a search term, sorted by points.
+>
+> Here's the scaffold — fill in the three `___FILL IN___` placeholders, then run it in **Dev Tools Console**:
 >
 > ```
-> GET eep-search-lab-demo/_search
+> PUT _scripts/eep-canonical-search
 > {
->   "query": {
->     "bool": {
->       "must":   [ { "match": { "title": "query" } } ],
->       "filter": [
->         { "term": { "published": true } },
->         { "term": { "category": "search" } }
->       ]
+>   "script": {
+>     "lang": "mustache",
+>     "source": {
+>       "query": {
+>         "bool": {
+>           "must": [
+>             ___FILL_IN: match query on "title" using the search_term param___
+>           ],
+>           "filter": [
+>             ___FILL_IN: term filter where published = true___,
+>             ___FILL_IN: term filter on "category" using the category param___
+>           ]
+>         }
+>       },
+>       "sort": [{ "points": "desc" }],
+>       "_source": ["title", "points"]
 >     }
->   },
->   "sort":    [ { "points": "desc" } ],
->   "_source": [ "title", "points" ]
+>   }
 > }
 > ```
 >
-> Paste the full response when you have it.
+> After you've stored the template, test it:
+>
+> ```
+> POST eep-search-lab-demo/_search/template
+> {
+>   "id": "eep-canonical-search",
+>   "params": {
+>     "search_term": "query",
+>     "category": "search"
+>   }
+> }
+> ```
+>
+> Tell me when you've run both and I'll grade your template.
 
-When they paste it, call **`eep-grade-search-query-tool`** with `mode: canonical`.
+When they confirm, call **`eep-grade-search-query-tool`** with `mode: canonical`.
 
-- If `passed: true`: confirm — "1 hit: 'Optimize bool query relevance tuning', 35 pts. The `match` on an English-analyzed field matched 'query' via porter stemming ('querying' → 'queri'). `filter` clauses don't affect the score — they just restrict."
-- If `passed: false`: check `hints_json` and report the hint. Most likely the index wasn't set up — ask them to re-run setup.
+The grade tool executes the learner's stored template directly from the cluster with the same params.
+
+- If the template doesn't exist or errors: report the `error_snippet` and ask them to check their `PUT _scripts/eep-canonical-search` command ran without errors.
+- If `passed: true`: confirm — "Your template returned 1 hit: 'Optimize bool query relevance tuning', 35 pts. The `match` on the English-analyzed field matched 'query' via porter stemming ('querying' → 'queri'). `filter` clauses restrict without affecting the relevance score. And because the query is stored as a template, you can reuse it with different params without rewriting it."
+- If `passed: false, hits_count: 0`: the template executed but returned no hits. Check their `must` and `filter` clauses — likely `published` or `category` filter is wrong, or the `match` field name is incorrect.
 
 ---
 
-## Beat 3 — Challenge
+## Beat 3 — Challenge template
 
 Say:
 
-> Now write your own query. Return **only the beginner-difficulty docs**, sorted by `points` descending, keeping just `title` and `points`. Run it in Console and paste the result.
+> Now create a second template on your own. Store it as **`eep-beginner-filter`** — it should accept a `difficulty` parameter and return only published docs at that difficulty level, sorted by `points` descending.
+>
+> Here's just the outer structure — you decide what goes inside:
+>
+> ```
+> PUT _scripts/eep-beginner-filter
+> {
+>   "script": {
+>     "lang": "mustache",
+>     "source": {
+>       "query": { ... },
+>       "sort": [ ... ],
+>       "_source": ["title", "points"]
+>     }
+>   }
+> }
+> ```
+>
+> Store the template, then test it:
+>
+> ```
+> POST eep-search-lab-demo/_search/template
+> {
+>   "id": "eep-beginner-filter",
+>   "params": { "difficulty": "beginner" }
+> }
+> ```
+>
+> Tell me when you have results and I'll grade it.
 
-The correct answer uses a `term` filter on `difficulty`, not `must`:
+When they confirm, call **`eep-grade-search-query-tool`** with `mode: challenge`.
 
-```
-GET eep-search-lab-demo/_search
-{
-  "query": {
-    "bool": {
-      "filter": [
-        { "term": { "difficulty": "beginner" } },
-        { "term": { "published": true } }
-      ]
-    }
-  },
-  "sort":    [ { "points": "desc" } ],
-  "_source": [ "title", "points" ]
-}
-```
+The grade tool executes the learner's `eep-beginner-filter` template directly from the cluster.
 
-Expected: 2 hits — "Configure text analysis for product search" (20 pts), then "Compare term versus match behavior" (15 pts).
-
-When they share their result, call **`eep-grade-search-query-tool`** with `mode: challenge`.
-
-- `passed: true, hits_count: 2, first_points: 20` → they got it. Explain: using `filter` instead of `must` means no relevance score is computed — correct for exact-value matching on a keyword field.
-- `passed: false, hits_count != 2` → use the hint. Likely using `must` with a `match` on a keyword field, or filtering on the wrong field name.
-- `passed: false, first_points != 20` → sort is wrong. They have the right docs but ascending order.
+- `passed: true, hits_count: 2, first_points: 20` → "Your template returned 2 hits: 'Configure text analysis for product search' (20 pts), then 'Compare term versus match behavior' (15 pts). Using `filter` instead of `must` is correct here — `difficulty` is a keyword field, so exact matching with `term` is the right choice. No scoring needed."
+- `passed: false, hits_count != 2` → use the hint. Likely filtering on the wrong field, missing the `published: true` filter, or using `match` instead of `term` on a keyword field.
+- `passed: false, first_points != 20` → sort is wrong — they have the right docs but ascending order.
+- Template not found / error → "Template `eep-beginner-filter` doesn't exist yet or has a syntax error. Run `GET _scripts/eep-beginner-filter` to check, and re-run the `PUT _scripts` command if needed."
 
 ---
 
@@ -185,4 +224,5 @@ No live lab for CCS. Walk through what each part means: `cluster_two:` is the re
 - All queries go in **Dev Tools Console** — never Discover or ES|QL.
 - Call the grade tool after **every** exercise that has a graded mode; don't skip it.
 - Do not paste raw workflow JSON to the user.
+- Do not show the learner the correct template source — give scaffolds and hints, not answers.
 - One query block per turn is enough — don't front-load all patterns.
