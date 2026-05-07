@@ -49,7 +49,7 @@ steps:
               path: "/_query"
               body:
                 query: |-
-                  ROW passed = false, mode = "canonical", hits_count = 0, first_points = 0, template_id = "eep-canonical-search", hints_json = "[\"Could not execute template eep-canonical-search. Run GET _scripts/eep-canonical-search to check it exists. If missing, re-run the PUT _scripts command.\"]", error_snippet = "{{ steps.run_canonical.error.message }}"
+                  ROW passed = false, mode = "canonical", hits_count = 0, first_points = 0, template_id = "eep-canonical-search", hints_json = "[\"Could not execute template eep-canonical-search. Run GET _scripts/eep-canonical-search to check it exists. If missing, re-run the PUT _scripts command.\"]"
         else:
           - name: canonical_check_hits
             type: if
@@ -62,7 +62,7 @@ steps:
                   path: "/_query"
                   body:
                     query: |-
-                      ROW passed = true, mode = "canonical", hits_count = {{ steps.run_canonical.output.hits.total.value }}, first_points = {{ steps.run_canonical.output.hits.hits[0]._source.points }}, template_id = "eep-canonical-search", hints_json = "[]", error_snippet = ""
+                      ROW passed = true, mode = "canonical", hits_count = {{ steps.run_canonical.output.hits.total.value }}, first_points = {{ steps.run_canonical.output.hits.hits[0]._source.points }}, template_id = "eep-canonical-search", hints_json = "[]"
             else:
               - name: finalize_canonical_no_hits
                 type: elasticsearch.request
@@ -71,7 +71,7 @@ steps:
                   path: "/_query"
                   body:
                     query: |-
-                      ROW passed = false, mode = "canonical", hits_count = 0, first_points = 0, template_id = "eep-canonical-search", hints_json = "[\"Template executed but returned 0 hits. Check your must clause matches on the title field, and your filters restrict to published:true and the category param.\"]", error_snippet = ""
+                      ROW passed = false, mode = "canonical", hits_count = 0, first_points = 0, template_id = "eep-canonical-search", hints_json = "[\"Template executed but returned 0 hits. Check your must clause matches on the title field, and your filters restrict to published:true and the category param.\"]"
     else:
       - name: route_challenge
         type: if
@@ -100,7 +100,7 @@ steps:
                   path: "/_query"
                   body:
                     query: |-
-                      ROW passed = false, mode = "challenge", hits_count = 0, first_points = 0, template_id = "eep-beginner-filter", hints_json = "[\"Could not execute template eep-beginner-filter. Run GET _scripts/eep-beginner-filter to check it exists. If missing, create it with PUT _scripts/eep-beginner-filter.\"]", error_snippet = "{{ steps.run_challenge.error.message }}"
+                      ROW passed = false, mode = "challenge", hits_count = 0, first_points = 0, template_id = "eep-beginner-filter", hints_json = "[\"Could not execute template eep-beginner-filter. Run GET _scripts/eep-beginner-filter to check it exists. If missing, create it with PUT _scripts/eep-beginner-filter.\"]"
             else:
               - name: challenge_check_count
                 type: if
@@ -117,7 +117,7 @@ steps:
                           path: "/_query"
                           body:
                             query: |-
-                              ROW passed = true, mode = "challenge", hits_count = {{ steps.run_challenge.output.hits.total.value }}, first_points = {{ steps.run_challenge.output.hits.hits[0]._source.points }}, template_id = "eep-beginner-filter", hints_json = "[]", error_snippet = ""
+                              ROW passed = true, mode = "challenge", hits_count = {{ steps.run_challenge.output.hits.total.value }}, first_points = {{ steps.run_challenge.output.hits.hits[0]._source.points }}, template_id = "eep-beginner-filter", hints_json = "[]"
                     else:
                       - name: finalize_wrong_sort
                         type: elasticsearch.request
@@ -126,7 +126,7 @@ steps:
                           path: "/_query"
                           body:
                             query: |-
-                              ROW passed = false, mode = "challenge", hits_count = {{ steps.run_challenge.output.hits.total.value }}, first_points = {{ steps.run_challenge.output.hits.hits[0]._source.points }}, template_id = "eep-beginner-filter", hints_json = "[\"2 beginner docs found but sort order is wrong — first hit should have points=20. Add sort: [{points: desc}] to your template source.\"]", error_snippet = ""
+                              ROW passed = false, mode = "challenge", hits_count = {{ steps.run_challenge.output.hits.total.value }}, first_points = {{ steps.run_challenge.output.hits.hits[0]._source.points }}, template_id = "eep-beginner-filter", hints_json = "[\"2 beginner docs found but sort order is wrong — first hit should have points=20. Add sort: [{points: desc}] to your template source.\"]"
                 else:
                   - name: finalize_wrong_count
                     type: elasticsearch.request
@@ -135,7 +135,7 @@ steps:
                       path: "/_query"
                       body:
                         query: |-
-                          ROW passed = false, mode = "challenge", hits_count = {{ steps.run_challenge.output.hits.total.value }}, first_points = 0, template_id = "eep-beginner-filter", hints_json = "[\"Expected 2 beginner docs but got {{ steps.run_challenge.output.hits.total.value }}. Use a bool filter with term on the difficulty param and published: true.\"]", error_snippet = ""
+                          ROW passed = false, mode = "challenge", hits_count = {{ steps.run_challenge.output.hits.total.value }}, first_points = 0, template_id = "eep-beginner-filter", hints_json = "[\"Expected 2 beginner docs but got {{ steps.run_challenge.output.hits.total.value }}. Use a bool filter with term on the difficulty param and published: true.\"]"
         else:
           - name: finalize_invalid_mode
             type: elasticsearch.request
@@ -144,4 +144,4 @@ steps:
               path: "/_query"
               body:
                 query: |-
-                  ROW passed = false, mode = "invalid", hits_count = 0, first_points = 0, template_id = "", hints_json = "[\"mode must be canonical or challenge.\"]", error_snippet = ""
+                  ROW passed = false, mode = "invalid", hits_count = 0, first_points = 0, template_id = "", hints_json = "[\"mode must be canonical or challenge.\"]"
